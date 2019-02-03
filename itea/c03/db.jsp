@@ -2,6 +2,6 @@
 
 <%
     DBWorker db = new DBWorker();
-    out.write(db.getRows());
+    out.write(db.getUsers());
     db.close();
 %>
