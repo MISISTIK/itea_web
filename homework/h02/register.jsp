@@ -1,6 +1,5 @@
 <%@ page import="my.jdbc.DBWorker" %>
 <%
-    boolean isRegister = request.getParameter("register") != null;
     String login_email = request.getParameter("login");
     String name = request.getParameter("name");
     String pass = request.getParameter("password");
@@ -26,65 +25,83 @@
             error = true;
             errorText.append("<li>Pass must not be empty</li>");
         }
-        if (isRegister) {
-            if (name.isEmpty()) {
-                error = true;
-                errorText.append("<li>Name must not be empty</li>");
-            }
 
-            if (re_pass.isEmpty()) {
-                error = true;
-                errorText.append("<li>Password retype must not be empty</li>");
-            }
+        if (re_pass.isEmpty()) {
+            error = true;
+            errorText.append("<li>Password retype must not be empty</li>");
+        }
 
-            if (!pass.isEmpty() && !re_pass.isEmpty() && !pass.equals(re_pass)) {
+        if (!pass.isEmpty() && !re_pass.isEmpty()) {
+            if (!pass.equals(re_pass)) {
                 error = true;
                 errorText.append("<li>Passwords must be identical</li>");
             }
+            // check for password %#@^$ and length > 8
+        }
 
-            if (age.isEmpty()) {
+        if (name.isEmpty()) {
+            error = true;
+            errorText.append("<li>Name must not be empty</li>");
+        }
+
+        if (age.isEmpty()) {
+            error = true;
+            errorText.append("<li>Age field must not be empty</li>");
+        } else {
+            if (!age.matches("\\d+")) {
                 error = true;
-                errorText.append("<li>Age field must not be empty</li>");
-            } else {
-                if (!age.matches("\\d+")) {
-                    error = true;
-                    errorText.append("<li>Age must be an integer</li>");
-                } else if (Integer.parseInt(age) > 200 || Integer.parseInt(age) <= 0) {
-                    error = true;
-                    errorText.append("<li>Age must be in range (0 - 200)</li>");
-                }
-            }
-
-            if (gender == null) {
+                errorText.append("<li>Age must be an integer</li>");
+            } else if (Integer.parseInt(age) > 200 || Integer.parseInt(age) <= 0) {
                 error = true;
-                errorText.append("<li>Gender is not chosen</li>");
-            }
-
-            if (address.isEmpty()) {
-                error = true;
-                errorText.append("<li>Address must be filled</li>");
-            }
-
-            if (comment.isEmpty()) {
-                error = true;
-                errorText.append("<li>Comment text must be filled</li>");
-            }
-
-
-            if (checkbox == null) {
-                error = true;
-                errorText.append("<li>Amigo browser is necessary for installation</li>");
+                errorText.append("<li>Age must be in range (0 - 200)</li>");
             }
         }
-        errorText.append("</ul></font>");
 
-        if (!error) form = false;
+        if (gender == null) {
+            error = true;
+            errorText.append("<li>Gender is not chosen</li>");
+        }
+
+        if (address.isEmpty()) {
+            error = true;
+            errorText.append("<li>Address must be filled</li>");
+        }
+
+        if (comment.isEmpty()) {
+            error = true;
+            errorText.append("<li>Comment text must be filled</li>");
+        }
+
+        if (checkbox == null) {
+            error = true;
+            errorText.append("<li>Amigo browser is necessary for installation</li>");
+        }
+        errorText.append("</ul></font>");
     }
 
-    if (form) {
-%>
+    if (!error && login_email != null) {
+        DBWorker db = new DBWorker();
 
-<b>Menu:</b> <a href='<%=isRegister ? "auth.jsp'>Login" : "auth.jsp?register'>Register" %></a> | <a href='db.jsp'>DB</a>
+        if (db.checkUserByLogin(login_email)) {
+            error = true;
+            errorText = new StringBuffer(("<font color = 'red'>User with login " + login_email + " already exists</font>"));
+        } else {
+            String res = db.registerUser(login_email, pass, name, age, gender, address, comment);
+            if (res.equals("true")) {
+                error = true;
+                errorText = new StringBuffer("<font color = 'green'>User " + name + "(" + login_email + ")" + " registered to database</font>");
+            } else {
+                error = true;
+                errorText = new StringBuffer(("<font color = 'red'>Java error occurred: " + res + "</font>"));
+            }
+        }
+        //Here will be the register method
+
+        db.close();
+    }
+
+%>
+<b>Menu:</b> <a href='login.jsp'>Login</a>
 <body>
 <center>
     <form action="" method="post">
@@ -101,7 +118,6 @@
                             <td> Password</td>
                             <td><input type='password' name='password'/></td>
                         </tr>
-                        <% if (isRegister) { %>
                         <tr>
                             <td> Retype password</td>
                             <td><input type='password' name='re_password'/></td>
@@ -142,18 +158,18 @@
                         <tr>
                             <td> Comment</td>
                             <td>
-                                <textarea cols='20' rows='5' name='comment'><%=(comment != null ? comment : "")%></textarea>
+                                <textarea cols='20' rows='5'
+                                          name='comment'><%=(comment != null ? comment : "")%></textarea>
                             </td>
                         </tr>
                         <tr>
                             <td> Install Amigo browser?</td>
-                            <td><input type='checkbox' name='agree' <%= (checkbox != null  ? "checked" : "") %>/></td>
+                            <td><input type='checkbox' name='agree' <%= (checkbox != null ? "checked" : "") %>/></td>
                         </tr>
-                        <% } %>
                         <tr>
                             <td>
                             </td>
-                            <td><input type='submit' value='<%= isRegister ? "Register" : "Login"%>'/></td>
+                            <td><input type='submit' value='Register'/></td>
                         </tr>
                     </table>
                 </td>
@@ -171,31 +187,3 @@
     </form>
 </center>
 </body>
-
-<% } else {
-        DBWorker db = new DBWorker();
-        if (!isRegister) {
-            if (db.checkLogin(login_email,pass)) {
-                out.write("<meta http-equiv='refresh' content='0; url=db.jsp' />");
-            } else {
-                out.write("<font color = 'red'>User or password incorrect</font>");
-            }
-
-        } else {
-            if (db.checkUserByLogin(login_email)) {
-                out.write("<font color = 'red'>User with login " + login_email + " already exists</font>");
-            } else {
-                String res = db.registerUser(login_email,pass,name,age,gender,address,comment);
-                if (res.equals("true")) {
-                    out.write("<font color = 'green'>User " + name + "(" + login_email + ")" + "registered to database</font>");
-                } else {
-                    out.write(res);
-                }
-            }
-            //Here will be the register method
-        }
-        db.close();
-}
-%>
-
-<br><br><br><input type='button' value='<-- GO BACK' onclick='history.go(-1)' autofocus>
