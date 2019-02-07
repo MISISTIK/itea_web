@@ -27,4 +27,21 @@
      Welcome to Tomcat
   </description>
 
+	<servlet>
+	  <servlet-name>myservlet</servlet-name>
+	  <servlet-class>my.servlets.MyServlet</servlet-class>
+	</servlet>
+	<servlet>
+	  <servlet-name>formservlet</servlet-name>
+	  <servlet-class>my.servlets.FormServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+	  <servlet-name>myservlet</servlet-name>
+	  <url-pattern>/myservlet</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+	  <servlet-name>formservlet</servlet-name>
+	  <url-pattern>/formservlet</url-pattern>
+	</servlet-mapping>
+
 </web-app>
